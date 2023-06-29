@@ -3,6 +3,7 @@ package com.springboot.blog.controller;
 import com.springboot.blog.entity.Post;
 import com.springboot.blog.payload.PostDto;
 import com.springboot.blog.payload.PostResponse;
+import com.springboot.blog.service.LikeService;
 import com.springboot.blog.service.PostService;
 import com.springboot.blog.utils.AppConstants;
 import jakarta.validation.Valid;
@@ -11,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -18,9 +20,11 @@ import java.util.List;
 public class PostController {
 
     private PostService postService;
+    private LikeService likeService;
 
-    public PostController(PostService postService) {
+    public PostController(PostService postService, LikeService likeService) {
         this.postService = postService;
+        this.likeService = likeService;
     }
 
     @PreAuthorize("hasRole('ADMIN')")
@@ -66,5 +70,22 @@ public class PostController {
         List<PostDto> posts = postService.getPostsByCategory(categoryId);
 
         return new ResponseEntity<>(posts, HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/like")
+    public ResponseEntity<String> createLikeByPostId(@PathVariable("id") Long postId,
+                                                     Principal principal){
+
+        likeService.createLike(postId, principal);
+
+        return new ResponseEntity<>("Post Id:" + postId + " added like", HttpStatus.CREATED);
+    }
+
+    @DeleteMapping("/{id}/like/{likeId}")
+    public ResponseEntity<String> deleteLikeByPostId(@PathVariable("id") Long postId,
+                                                     @PathVariable("likeId") Long likeId){
+        likeService.deleteLike(postId,likeId);
+
+        return new ResponseEntity<>("Post Id: " + postId + " like canceled", HttpStatus.OK);
     }
 }
